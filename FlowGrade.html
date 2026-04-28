@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlowGrade - SRL Environment</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        * { box-sizing: border-box; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #fcfaff; color: #0f172a; margin: 0; overflow-x: hidden; }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-thumb { background: #ddd6fe; border-radius: 10px; }
+
+        @keyframes fadeIn  { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes floatUp { from { opacity:0; transform:translateY(30px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes shimmer { from { background-position:-200% center; } to { background-position:200% center; } }
+        @keyframes pulseRing { 0% { transform:scale(1); opacity:.6; } 100% { transform:scale(1.55); opacity:0; } }
+
+        .animate-fade { animation: fadeIn 0.4s ease-out forwards; }
+        .wu1 { animation: floatUp .8s 0s   cubic-bezier(.2,0,0,1) both; }
+        .wu2 { animation: floatUp .8s .12s cubic-bezier(.2,0,0,1) both; }
+        .wu3 { animation: floatUp .8s .24s cubic-bezier(.2,0,0,1) both; }
+        .wu4 { animation: floatUp .8s .36s cubic-bezier(.2,0,0,1) both; }
+        .wu5 { animation: floatUp .8s .48s cubic-bezier(.2,0,0,1) both; }
+
+        .sidebar-item-active { background:#6366f1; color:white!important; box-shadow:0 10px 15px -3px rgba(99,102,241,.3); }
+        .sidebar-transition   { transition: transform .4s cubic-bezier(.4,0,.2,1); }
+
+        .progress-track { height:8px; background:#f1f5f9; border-radius:999px; overflow:hidden; }
+        .progress-fill  { height:100%; background:#22c55e; border-radius:999px; transition:width .7s cubic-bezier(.4,0,.2,1); }
+
+        .focus-card { background:linear-gradient(135deg,#4f46e5,#7c3aed); border-radius:2rem; position:relative; overflow:hidden; color:white; box-shadow:0 20px 25px -5px rgba(79,70,229,.2); }
+        .brain-overlay { position:absolute; right:-10px; top:50%; transform:translateY(-50%); opacity:.12; pointer-events:none; }
+
+        .fg-input { width:100%; padding:1.1rem 1.25rem; background:#f8fafc; border:1px solid #e2e8f0; border-radius:1rem; font-size:.875rem; font-weight:500; outline:none; transition:all .2s; font-family:'Plus Jakarta Sans',sans-serif; }
+        .fg-input:focus { border-color:#4f46e5; background:#fff; box-shadow:0 0 0 4px rgba(79,70,229,.05); }
+        .fg-label { font-size:.625rem; font-weight:800; color:#94a3b8; text-transform:uppercase; letter-spacing:.05em; margin-bottom:.5rem; display:block; padding-left:.25rem; }
+        .btn-dark { background:#0f172a; color:white; width:100%; padding:1.1rem; border-radius:1.25rem; font-size:.75rem; font-weight:900; text-transform:uppercase; letter-spacing:.1em; transition:all .2s; box-shadow:0 10px 15px -3px rgba(15,23,42,.2); }
+        .btn-dark:hover { background:#1e293b; transform:translateY(-1px); }
+        .btn-dark:active { transform:translateY(0); }
+
+        .note-body { font-size:1rem; line-height:1.8; color:#334155; white-space:pre-wrap; word-break:break-word; }
+        .note-textarea { width:100%; min-height:260px; padding:1.25rem; background:#f8fafc; border:1px solid #e2e8f0; border-radius:1rem; font-size:1rem; font-weight:500; line-height:1.8; outline:none; resize:vertical; transition:all .2s; font-family:'Plus Jakarta Sans',sans-serif; color:#334155; }
+        .note-textarea:focus { border-color:#4f46e5; background:#fff; box-shadow:0 0 0 4px rgba(79,70,229,.05); }
+
+        /* ── Welcome page ── */
+        .wbg { background:#07070f; min-height:100vh; position:relative; overflow-x:hidden; }
+        .wgrid { position:fixed; inset:0; pointer-events:none; background-image:linear-gradient(rgba(99,102,241,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(99,102,241,.04) 1px,transparent 1px); background-size:56px 56px; }
+        .wglow-a { position:fixed; width:700px; height:700px; border-radius:50%; background:radial-gradient(circle,rgba(99,102,241,.17) 0%,transparent 65%); top:-200px; left:-200px; pointer-events:none; }
+        .wglow-b { position:fixed; width:500px; height:500px; border-radius:50%; background:radial-gradient(circle,rgba(124,58,237,.13) 0%,transparent 65%); bottom:-100px; right:-100px; pointer-events:none; }
+        .grad-text { background:linear-gradient(135deg,#a5b4fc 0%,#818cf8 40%,#c4b5fd 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+        .pill { display:inline-flex; align-items:center; gap:.5rem; background:rgba(99,102,241,.12); border:1px solid rgba(99,102,241,.22); border-radius:999px; padding:.35rem 1rem; font-size:.7rem; font-weight:700; color:#a5b4fc; letter-spacing:.04em; }
+        .wcard { background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.07); border-radius:1.5rem; transition:all .3s; }
+        .wcard:hover { background:rgba(99,102,241,.07); border-color:rgba(99,102,241,.28); transform:translateY(-3px); }
+        .srl-card { background:rgba(255,255,255,.025); border:1px solid rgba(255,255,255,.06); border-radius:1.25rem; padding:1.5rem; }
+        .btn-pw { background:linear-gradient(135deg,#6366f1,#7c3aed); color:white; border-radius:.875rem; font-weight:900; font-size:.8rem; letter-spacing:.08em; text-transform:uppercase; padding:1rem 2rem; transition:all .25s; box-shadow:0 0 28px rgba(99,102,241,.35); display:inline-flex; align-items:center; gap:.5rem; }
+        .btn-pw:hover { transform:translateY(-2px); box-shadow:0 0 44px rgba(99,102,241,.5); }
+        .btn-gw { background:transparent; color:rgba(255,255,255,.55); border:1px solid rgba(255,255,255,.12); border-radius:.875rem; font-weight:700; font-size:.8rem; letter-spacing:.06em; text-transform:uppercase; padding:1rem 2rem; transition:all .25s; }
+        .btn-gw:hover { background:rgba(255,255,255,.05); border-color:rgba(255,255,255,.24); color:white; transform:translateY(-2px); }
+        .pulse-ring { position:absolute; inset:0; border-radius:inherit; border:2px solid rgba(99,102,241,.5); animation:pulseRing 2.2s ease-out infinite; }
+        .wdivider { border:none; border-top:1px solid rgba(255,255,255,.06); margin:0; }
+    </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useMemo, useRef } = React;
+
+/* API Configuration (Updated for Render) */
+const API_BASE = "https://flowgrade-2.onrender.com/api";
+
+/* ── Storage ── */
+const SS = {
+    get:  k   => { try { return JSON.parse(localStorage.getItem('fg_'+k)||'[]');   } catch { return [];   } },
+    set:  (k,v)=> { try { localStorage.setItem('fg_'+k, JSON.stringify(v));        } catch {} },
+    getO: k   => { try { return JSON.parse(localStorage.getItem('fg_'+k)||'null'); } catch { return null; } },
+    setO: (k,v)=> { try { localStorage.setItem('fg_'+k, JSON.stringify(v));        } catch {} },
+};
+
+/* ── Icon ── */
+const Icon = ({ name, size=20, className='' }) => {
+    const r = useRef(null);
+    useEffect(()=>{ if (window.lucide && r.current) window.lucide.createIcons({ nodes:[r.current] }); }, [name,size]);
+    return <i ref={r} data-lucide={name} style={{width:size,height:size}} className={`inline-block shrink-0 ${className}`}/>;
+};
+
+/* ── Password strength ── */
+const pws = pwd => {
+    if (!pwd) return { score:0, label:'', color:'' };
+    let s=0;
+    if (pwd.length>=8) s++; if (pwd.length>=12) s++;
+    if (/[A-Z]/.test(pwd)) s++; if (/[0-9]/.test(pwd)) s++; if (/[^A-Za-z0-9]/.test(pwd)) s++;
+    if (s<=1) return {score:s,label:'Weak',  color:'#ef4444'};
+    if (s<=2) return {score:s,label:'Fair',  color:'#f59e0b'};
+    if (s<=3) return {score:s,label:'Good',  color:'#3b82f6'};
+    return          {score:s,label:'Strong',color:'#22c55e'};
+};
+
+/* ════════════════════════════════════════════
+   WELCOME PAGE
+════════════════════════════════════════════ */
+function WelcomePage({ onSignUp, onLogin }) {
+    return (
+        <div className="wbg">
+            <div className="wgrid"/><div className="wglow-a"/><div className="wglow-b"/>
+
+            {/* Nav */}
+            <nav className="relative z-10 flex items-center justify-between px-6 md:px-12 py-6 max-w-6xl mx-auto">
+                <div className="flex items-center gap-3">
+                    <div className="relative w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center">
+                        <div className="pulse-ring"/>
+                        <Icon name="graduation-cap" size={19} className="text-white relative z-10"/>
+                    </div>
+                    <span className="text-white font-black italic uppercase tracking-tighter text-xl">FlowGrade</span>
+                </div>
+                <div className="flex items-center gap-3">
+                    <button onClick={onLogin}  className="btn-gw text-[11px] px-5 py-2.5">Sign In</button>
+                    <button onClick={onSignUp} className="btn-pw text-[11px] px-5 py-2.5" style={{padding:'.6rem 1.25rem'}}>Get Started</button>
+                </div>
+            </nav>
+
+            <div className="relative z-10 max-w-5xl mx-auto px-6 md:px-12 pt-14 pb-12 text-center">
+
+                {/* Hero */}
+                <div className="wu1">
+                    <span className="pill mb-8 inline-flex"><span className="w-1.5 h-1.5 rounded-full bg-indigo-400"/>Self-Regulated Learning Environment</span>
+                    <h1 className="text-5xl md:text-[4.5rem] font-black tracking-tight leading-[1.05] text-white mt-5">
+                        Track your grades.<br/><span className="grad-text">Own your degree.</span>
+                    </h1>
+                </div>
+                <p className="wu2 text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed mt-6 mb-10">
+                    FlowGrade is a personal academic dashboard for students who take their results seriously — weighted grades, study tasks, and research notes, all in one place.
+                </p>
+
+                {/* CTAs */}
+                <div className="wu3 flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
+                    <button onClick={onSignUp} className="btn-pw">Create Free Account <Icon name="arrow-right" size={15} className="text-white"/></button>
+                    <button onClick={onLogin}  className="btn-gw">I already have an account</button>
+                </div>
+                <div className="wu3 flex flex-wrap justify-center gap-6 text-slate-600 text-xs font-semibold mb-16">
+                    {['Free to use','No ads','Data stays local','No tracking'].map(t=>(
+                        <span key={t} className="flex items-center gap-1.5"><Icon name="check" size={12} className="text-indigo-500"/>{t}</span>
+                    ))}
+                </div>
+
+                {/* Feature cards */}
+                <div className="wu4 grid grid-cols-1 sm:grid-cols-3 gap-4 mb-20">
+                    {[
+                        {icon:'award',         title:'Weighted GPA',  desc:'Every assessment tracked with accurate weighted module averages.'},
+                        {icon:'calendar-check',title:'Study Planner', desc:'Set deadlines and stay on top of every upcoming submission.'},
+                        {icon:'book-open',     title:'Note Archive',  desc:'Capture and edit research notes alongside your grades.'},
+                    ].map(f=>(
+                        <div key={f.title} className="wcard p-6 text-left">
+                            <div className="w-10 h-10 rounded-xl bg-indigo-600/20 border border-indigo-50/20 flex items-center justify-center mb-4">
+                                <Icon name={f.icon} size={19} className="text-indigo-400"/>
+                            </div>
+                            <h3 className="text-white font-bold text-sm mb-1.5">{f.title}</h3>
+                            <p className="text-slate-500 text-xs leading-relaxed">{f.desc}</p>
+                        </div>
+                    ))}
+                </div>
+
+                {/* About SRL */}
+                <hr className="wdivider mb-14"/>
+                <div className="wu5 text-left max-w-3xl mx-auto mb-20">
+                    <span className="pill mb-6 inline-flex"><Icon name="brain" size={12} className="text-indigo-400"/>About Self-Regulated Learning</span>
+                    <h2 className="text-3xl md:text-4xl font-black text-white mb-6 leading-tight">
+                        Why manual tracking<br/><span className="grad-text">matters for your results.</span>
+                    </h2>
+                    <p className="text-slate-400 text-base leading-relaxed mb-8">
+                        Self-Regulated Learning (SRL) is the research-backed practice of actively monitoring your own academic progress rather than leaving it to automatic systems. Students who track their own performance engage more deeply with the material, identify weaknesses earlier, and consistently achieve higher outcomes.
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+                        {[
+                            {icon:'eye',         title:'Metacognitive Awareness', desc:'Knowing where you stand in each module helps you prioritise study time.'},
+                            {icon:'target',      title:'Goal-Directed Study',     desc:'Tracking progress toward targets keeps motivation consistent.'},
+                            {icon:'refresh-ccw', title:'Adaptive Strategy',       desc:'Seeing your weighted average lets you adjust effort before it\'s too late.'},
+                        ].map(s=>(
+                            <div key={s.title} className="srl-card">
+                                <div className="w-9 h-9 rounded-lg bg-indigo-600/15 border border-indigo-500/15 flex items-center justify-center mb-3">
+                                    <Icon name={s.icon} size={16} className="text-indigo-400"/>
+                                </div>
+                                <h4 className="text-white text-xs font-bold mb-1">{s.title}</h4>
+                                <p className="text-slate-500 text-xs leading-relaxed">{s.desc}</p>
+                            </div>
+                        ))}
+                    </div>
+                    <p className="text-slate-500 text-sm leading-relaxed border-l-2 border-indigo-800 pl-4 italic">
+                        "Students who self-regulate their learning outperform peers by an average of 30 percentile points." — Zimmerman &amp; Schunk, Educational Psychology Review
+                    </p>
+                </div>
+
+                {/* Bottom CTA */}
+                <hr className="wdivider mb-14"/>
+                <div className="wu5 mb-20">
+                    <h2 className="text-3xl font-black text-white mb-3">Ready to take control?</h2>
+                    <p className="text-slate-500 text-sm mb-8">Join students already using FlowGrade to manage their academic progress.</p>
+                    <button onClick={onSignUp} className="btn-pw">Start for Free <Icon name="arrow-right" size={15} className="text-white"/></button>
+                </div>
+            </div>
+
+            <div className="relative z-10 border-t border-white/5 py-6 text-center">
+                <p className="text-[10px] text-slate-700 font-medium uppercase tracking-widest">FlowGrade · SRL Academic Environment</p>
+            </div>
+        </div>
+    );
+}
+
+/* ════════════════════════════════════════════
+   AUTH PORTAL (Updated: Direct Signup & Email Recovery)
+════════════════════════════════════════════ */
+function AuthPortal({ initialMode, onBack, onAuthenticated }) {
+    const [mode,    setMode]    = useState(initialMode); // login, signup, verify, forgot, reset
+    const [name,    setName]    = useState('');
+    const [email,   setEmail]   = useState('');
+    const [pwd,     setPwd]     = useState('');
+    const [confirm, setConfirm] = useState('');
+    const [showPwd, setShowPwd] = useState(false);
+    const [showCon, setShowCon] = useState(false);
+    const [error,   setError]   = useState('');
+    const [code,    setCode]    = useState('');
+    const [codeIn,  setCodeIn]  = useState('');
+    const [codeErr, setCodeErr] = useState('');
+    const [attempts,setAttempts]= useState(0);
+    const [lockUntil,setLockUntil]=useState(null);
+
+    const str    = pws(pwd);
+    const locked = lockUntil && Date.now() < lockUntil;
+
+    // Password Recovery: Send Real Email (Functional Requirement TC05)
+    const handleForgot = async e => {
+        e.preventDefault();
+        setError('');
+        try {
+            const res = await fetch(`${API_BASE}/forgot-password`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: email.toLowerCase().trim() })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setCode(data.code); 
+                setMode('verify');
+            } else {
+                const data = await res.json();
+                setError(data.error || "Account not found or email failed.");
+            }
+        } catch (err) {
+            setError("SQL Server is offline.");
+        }
+    };
+
+    // Password Reset: Update SQL Database
+    const handleReset = async e => {
+        e.preventDefault();
+        if (str.score < 2) return setError('New password is too weak.');
+        if (pwd !== confirm) return setError('Passwords do not match.');
+        
+        try {
+            const res = await fetch(`${API_BASE}/reset-password`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: email.toLowerCase().trim(), password: pwd })
+            });
+            if (res.ok) {
+                alert('Password reset successful in database!');
+                setMode('login');
+            } else {
+                setError("Database update failed.");
+            }
+        } catch(err) { setError("SQL sync offline"); }
+    };
+
+    const submit = async e => {
+        e.preventDefault(); setError('');
+        const em = email.toLowerCase().trim();
+        if (locked) return setError(`Locked. Try again in ${Math.ceil((lockUntil-Date.now())/1000)}s.`);
+        const users = SS.get('registry');
+
+        if (mode==='login') {
+            const u = users.find(x=>x.email===em);
+            const fail = () => {
+                const a = attempts+1; setAttempts(a);
+                if (a>=5) { setLockUntil(Date.now()+30000); setAttempts(0); return setError('Too many attempts. Locked 30s.'); }
+                setError(`Email or password incorrect. (${5-a} left)`);
+            };
+            if (!u || u.password!==pwd) return fail();
+            setAttempts(0); setLockUntil(null);
+            onAuthenticated(u);
+        } else {
+            // SIGN UP (Instant: No code verification)
+            if (!name.trim()||name.trim().length<2) return setError('Enter your full name.');
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) return setError('Enter a valid email address.');
+            if (str.score<2) return setError('Password too weak.');
+            if (pwd!==confirm) return setError('Passwords do not match.');
+            if (users.some(x=>x.email===em)) return setError('This email is already registered.');
+            
+            const newUser = {
+                uid: Date.now().toString(),
+                name: name.trim(),
+                email: em,
+                password: pwd,
+                uniEmail: '',
+                institution: '',
+                createdAt: new Date().toISOString()
+            };
+
+            try {
+                // Sync to SQL
+                await fetch(`${API_BASE}/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email: em, password: pwd })
+                });
+            } catch (err) { console.log("SQL offline - proceeding local"); }
+
+            SS.set('registry', [...users, newUser]);
+            onAuthenticated(newUser);
+        }
+    };
+
+    const verify = e => {
+        e.preventDefault(); setCodeErr('');
+        if (codeIn.trim() !== code.toString()) return setCodeErr('Incorrect code.');
+        setMode('reset'); // Used only for recovery path
+    };
+
+    const BackBtn=({onClick,label})=>(
+        <button type="button" onClick={onClick} className="inline-flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-widest hover:text-indigo-500 mb-5">
+            <Icon name="arrow-left" size={11}/>{label}
+        </button>
+    );
+
+    if (mode==='reset') return (
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+            <div className="max-w-md w-full bg-white p-10 rounded-[2.5rem] shadow-xl animate-fade">
+                <h2 className="text-xl font-bold text-slate-800 mb-6">New Password</h2>
+                <form onSubmit={handleReset} className="space-y-4">
+                    <div><label className="fg-label">Password</label><input required type="password" className="fg-input" onChange={e=>setPwd(e.target.value)}/></div>
+                    <div><label className="fg-label">Confirm</label><input required type="password" className="fg-input" onChange={e=>setConfirm(e.target.value)}/></div>
+                    {error && <p className="text-xs text-red-500 font-bold">{error}</p>}
+                    <button type="submit" className="btn-dark">Reset Password</button>
+                </form>
+            </div>
+        </div>
+    );
+
+    if (mode==='forgot') return (
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+            <div className="max-w-md w-full bg-white p-10 rounded-[2.5rem] shadow-xl animate-fade">
+                <BackBtn onClick={() => setMode('login')} label="Back to login"/>
+                <h2 className="text-xl font-bold text-slate-800 mb-6">Recover Account</h2>
+                <form onSubmit={handleForgot} className="space-y-4">
+                    <div><label className="fg-label">Email</label><input required type="email" className="fg-input" value={email} onChange={e=>setEmail(e.target.value)}/></div>
+                    {error && <p className="text-xs text-red-500 font-bold">{error}</p>}
+                    <button type="submit" className="btn-dark">Send Reset Code</button>
+                </form>
+            </div>
+        </div>
+    );
+
+    if (mode==='verify') return (
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 text-center">
+            <div className="max-w-md w-full bg-white p-10 rounded-[2.5rem] shadow-xl animate-fade">
+                <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-5 mb-6">
+                    <p className="text-[9px] font-bold text-indigo-400 uppercase tracking-widest mb-2">Code</p>
+                    <p className="text-xs text-slate-500 mb-4 italic">Check your Gmail inbox</p>
+                    <p className="text-4xl font-black tracking-[0.3em] text-indigo-700 font-mono">••••••</p>
+                </div>
+                <form onSubmit={verify} className="space-y-4">
+                    <input required className="fg-input text-center text-2xl font-black" placeholder="······" onChange={e=>setCodeIn(e.target.value)}/>
+                    {codeErr && <p className="text-xs text-red-500 font-bold">{codeErr}</p>}
+                    <button type="submit" className="btn-dark">Verify Code</button>
+                </form>
+            </div>
+        </div>
+    );
+
+    return (
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+            <div className="max-w-md w-full bg-white p-10 rounded-[2.5rem] shadow-xl animate-fade">
+                <BackBtn onClick={onBack} label="Back to home"/>
+                <div className="text-center mb-8">
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-indigo-600 text-white rounded-2xl mb-4"><Icon name="graduation-cap" size={30}/></div>
+                    <h1 className="text-2xl font-black italic uppercase tracking-tighter text-slate-900">FlowGrade</h1>
+                    <div className="inline-flex items-center gap-1.5 mt-3 px-3 py-1.5 bg-green-50 border border-green-200 rounded-full">
+                        <Icon name="shield-check" size={12} className="text-green-600"/><span className="text-[9px] font-black text-green-700 uppercase tracking-widest">No-AI Commitment</span>
+                    </div>
+                </div>
+                <form onSubmit={submit} className="space-y-4">
+                    {mode==='signup' && <div><label className="fg-label">Full Name</label><input required className="fg-input" onChange={e=>setName(e.target.value)}/></div>}
+                    <div><label className="fg-label">Email Address</label><input required type="email" className="fg-input" onChange={e=>setEmail(e.target.value)}/></div>
+                    <div>
+                        <label className="fg-label">Password</label>
+                        <input required type={showPwd ? 'text' : 'password'} className="fg-input" onChange={e=>setPwd(e.target.value)}/>
+                        {mode==='login' && <button type="button" onClick={() => setMode('forgot')} className="text-[10px] text-indigo-500 font-bold mt-2">Forgot Password?</button>}
+                    </div>
+                    {mode==='signup' && <div><label className="fg-label">Confirm</label><input required type="password" className="fg-input" onChange={e=>setConfirm(e.target.value)}/></div>}
+                    {error && <p className="text-xs text-red-500 font-bold">{error}</p>}
+                    <button type="submit" disabled={locked} className="btn-dark mt-2">{mode==='login'?'Sign In': (mode==='signup' ? 'Create Account' : 'Continue')}</button>
+                </form>
+                <button onClick={()=>setMode(mode==='login'?'signup':'login')} className="w-full mt-5 text-[10px] font-black text-indigo-500 uppercase tracking-widest">{mode==='login'?'Create Account':'Sign In'}</button>
+            </div>
+        </div>
+    );
+}
+
+/* ════════════════════════════════════════════
+   SETTINGS MODAL
+════════════════════════════════════════════ */
+function SettingsModal({ profile, onClose, onSave }) {
+    const [displayName, setDisplayName] = useState(profile.name||'');
+    const [institution, setInstitution] = useState(profile.institution||'');
+    const [uniEmail,    setUniEmail]    = useState(profile.uniEmail||'');
+    const [saved, setSaved] = useState(false);
+
+    const save = () => {
+        onSave({...profile,name:displayName,institution,uniEmail});
+        setSaved(true); setTimeout(()=>{ setSaved(false); onClose(); },800);
+    };
+
+    return (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+            <div className="bg-white w-full max-w-lg rounded-[2.5rem] overflow-hidden animate-fade shadow-2xl">
+                <div className="px-10 pt-10 pb-6 flex justify-between items-center">
+                    <div><h2 className="text-xl font-bold text-slate-900">Settings</h2><p className="text-xs text-slate-400 mt-1">Manage your profile &amp; preferences</p></div>
+                    <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600"><Icon name="x" size={20}/></button>
+                </div>
+                <div className="px-10 border-t border-slate-100 pt-8 pb-10 space-y-5">
+                    <div><label className="fg-label">Display Name</label><input className="fg-input" value={displayName} onChange={e=>setDisplayName(e.target.value)} placeholder="Your name"/></div>
+                    <div><label className="fg-label">Institution / University</label><input className="fg-input" value={institution} onChange={e=>setInstitution(e.target.value)} placeholder="e.g. University of London"/></div>
+                    <div><label className="fg-label">University Email</label><input type="email" className="fg-input" value={uniEmail} onChange={e=>setUniEmail(e.target.value)} placeholder="j.smith@uni.ac.uk"/></div>
+                    <div className="pt-1"><button onClick={save} className="btn-dark" style={{background:saved?'#22c55e':undefined}}>{saved?'✓ Saved!':'Save Changes'}</button></div>
+                    <div className="border-t border-slate-100 pt-6">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Danger Zone</p>
+                        <button onClick={()=>{ if(window.confirm('Clear ALL data? Cannot be undone.')){ const k=btoa(profile.email); SS.set(k+'_tasks',[]); SS.set(k+'_grades',[]); SS.set(k+'_notes',[]); onClose(); window.location.reload(); }}}
+                            className="w-full px-4 py-3 rounded-xl border-2 border-rose-100 text-rose-500 text-xs font-bold uppercase tracking-widest hover:bg-rose-50 transition-all">Clear All Data</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+/* ════════════════════════════════════════════
+   NOTE MODAL
+════════════════════════════════════════════ */
+function NoteModal({ note, onClose, onSave, onDelete }) {
+    const [editing, setEditing] = useState(false);
+    const [title,   setTitle]   = useState(note.title);
+    const [content, setContent] = useState(note.content||'');
+    const save=()=>{ onSave({...note,title,content}); setEditing(false); };
+
+    return (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+            <div className="bg-white w-full max-w-2xl rounded-[2.5rem] overflow-hidden animate-fade shadow-2xl flex flex-col" style={{maxHeight:'90vh'}}>
+                <div className="px-10 pt-10 pb-6 flex justify-between items-start shrink-0">
+                    <div className="flex-1 pr-4">
+                        {editing ? <input className="fg-input text-xl font-bold" value={title} onChange={e=>setTitle(e.target.value)} placeholder="Note title..."/> : (
+                            <><p className="text-[9px] font-bold text-indigo-400 uppercase tracking-widest mb-2">Research Note</p>
+                            <h2 className="text-2xl font-bold text-slate-900 leading-tight">{title}</h2>
+                            <p className="text-xs text-slate-400 mt-2">{note.createdAt?new Date(note.createdAt).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}):''}</p></>
+                        )}
+                    </div>
+                    <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 shrink-0"><Icon name="x" size={20}/></button>
+                </div>
+                <div className="px-10 pb-6 overflow-y-auto flex-1 border-t border-slate-100 pt-6">
+                    {editing ? <textarea className="note-textarea" value={content} onChange={e=>setContent(e.target.value)} placeholder="Write your notes here..." autoFocus/> : (
+                        <div className="note-body">{content||<span className="text-slate-300 italic">No content yet. Click Edit to add notes.</span>}</div>
+                    )}
+                </div>
+                <div className="px-10 pb-10 pt-4 border-t border-slate-50 flex justify-between items-center gap-3 shrink-0">
+                    <button onClick={()=>{if(window.confirm('Delete this note?')){onDelete(note.id);onClose();}}} className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-rose-400 hover:bg-rose-50 text-xs font-bold uppercase tracking-widest transition-all"><Icon name="trash-2" size={14}/> Delete</button>
+                    <div className="flex items-center gap-3">
+                        {editing ? (<>
+                            <button onClick={()=>{setTitle(note.title);setContent(note.content||'');setEditing(false);}} className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-500 text-xs font-bold uppercase tracking-widest hover:bg-slate-50 transition-all">Cancel</button>
+                            <button onClick={save} className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-indigo-700 transition-all">Save Note</button>
+                        </>) : (
+                            <button onClick={()=>setEditing(true)} className="flex items-center gap-2 px-6 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-slate-700 transition-all"><Icon name="pencil" size={14}/> Edit Note</button>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+/* ════════════════════════════════════════════
+   TASK DETAIL MODAL
+════════════════════════════════════════════ */
+function TaskModal({ task, onClose, onDelete }) {
+    const daysLeft = task.deadline ? Math.ceil((new Date(task.deadline)-new Date())/86400000) : null;
+    const urg = daysLeft===null?'ok': daysLeft<0?'overdue':daysLeft<=3?'soon':'ok';
+    const colors = {overdue:'text-rose-500',soon:'text-amber-500',ok:'text-green-500'};
+    const labels = {overdue:`${Math.abs(daysLeft)}d overdue`,soon:`${daysLeft}d left`,ok:`${daysLeft}d left`};
+
+    return (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+            <div className="bg-white w-full max-w-md rounded-[2.5rem] overflow-hidden animate-fade shadow-2xl">
+                <div className="px-10 pt-10 pb-6 flex justify-between items-start">
+                    <div>
+                        <p className="text-[9px] font-bold text-indigo-400 uppercase tracking-widest mb-2">Study Task</p>
+                        <h2 className="text-2xl font-bold text-slate-900 leading-tight">{task.title}</h2>
+                    </div>
+                    <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 shrink-0"><Icon name="x" size={20}/></button>
+                </div>
+                <div className="px-10 pb-10 border-t border-slate-100 pt-6 space-y-4">
+                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
+                        <div className="flex items-center gap-3"><Icon name="calendar" size={16} className="text-indigo-400"/><span className="text-sm font-bold text-slate-700">Due Date</span></div>
+                        <span className="text-sm font-bold text-slate-900">{task.deadline||'—'}</span>
+                    </div>
+                    {daysLeft!==null && (
+                        <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
+                            <div className="flex items-center gap-3"><Icon name="clock" size={16} className="text-indigo-400"/><span className="text-sm font-bold text-slate-700">Time Remaining</span></div>
+                            <span className={`text-sm font-black ${colors[urg]}`}>{labels[urg]}</span>
+                        </div>
+                    )}
+                    <p className="text-[9px] text-slate-400 font-medium">Added {task.createdAt?new Date(task.createdAt).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):''}</p>
+                    <button onClick={()=>{if(window.confirm('Delete this task?')){onDelete(task.id);onClose();}}} className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-rose-100 text-rose-500 text-xs font-bold uppercase tracking-widest hover:bg-rose-50 transition-all"><Icon name="trash-2" size={14}/> Delete Task</button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+/* ════════════════════════════════════════════
+   APP SHELL  (post-login)
+════════════════════════════════════════════ */
+function AppShell({ profile: initialProfile, onSignOut }) {
+    const [profile,     setProfile]     = useState(initialProfile);
+    const [activeTab,   setActiveTab]   = useState('dashboard');
+    const [showModal,   setShowModal]   = useState(null);
+    const [openNote,    setOpenNote]    = useState(null);
+    const [openTask,    setOpenTask]    = useState(null);
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [profileMenu, setProfileMenu] = useState(false);
+    const [openModule,  setOpenModule]  = useState(null);
+    const [tasks,  setTasks]  = useState([]);
+    const [grades, setGrades] = useState([]);
+    const [notes,  setNotes]  = useState([]);
+
+    const uk = btoa(profile.email);
+
+    useEffect(()=>{ setTasks(SS.get(uk+'_tasks')); setGrades(SS.get(uk+'_grades')); setNotes(SS.get(uk+'_notes')); }, [uk]);
+
+    const persist= async (type,data)=>{
+        if(type==='task') { setTasks(data);  SS.set(uk+'_tasks',  data); }
+        if(type==='note') { setNotes(data);  SS.set(uk+'_notes',  data); }
+        if(type==='grade'){ 
+            setGrades(data); SS.set(uk+'_grades', data); 
+            const newItem = data[data.length - 1];
+            try {
+                await fetch(`${API_BASE}/grades`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: profile.uid, module: newItem.module, title: newItem.title, weight: newItem.weight, value: newItem.value })
+                });
+            } catch (err) { console.log("SQL sync offline"); }
+        }
+    };
+    const addItem=(e,type)=>{ e.preventDefault(); const d=Object.fromEntries(new FormData(e.target).entries()); const item={...d,id:Date.now().toString(),createdAt:new Date().toISOString()}; if(type==='task')persist('task',[...tasks,item]); if(type==='grade')persist('grade',[...grades,item]); if(type==='note')persist('note',[...notes,item]); setShowModal(null); };
+    const delItem=(id,type)=>{ if(type==='task')persist('task',tasks.filter(i=>i.id!==id)); if(type==='grade')persist('grade',grades.filter(i=>i.id!==id)); if(type==='note')persist('note',notes.filter(i=>i.id!==id)); };
+    const updateNote=n=>{ const u=notes.map(x=>x.id===n.id?n:x); persist('note',u); setOpenNote(n); };
+    const saveSettings=p=>{ const r=SS.get('registry'); SS.set('registry',r.map(u=>u.uid===p.uid?p:u)); setProfile(p); };
+
+    const moduleData = useMemo(()=>{
+        const g={};
+        grades.forEach(gr=>{ const m=gr.module||'General'; if(!g[m])g[m]={items:[],totalWeight:0,weightedSum:0}; const sc=parseFloat(gr.value||0),wt=parseFloat(gr.weight||0); g[m].items.push(gr); g[m].totalWeight+=wt; g[m].weightedSum+=sc*wt; });
+        return g;
+    },[grades]);
+
+    const gpa=()=>{ if(!grades.length)return'0'; let tw=0,ws=0; grades.forEach(g=>{ const w=parseFloat(g.weight||0); tw+=w; ws+=parseFloat(g.value||0)*w; }); return tw>0?(ws/tw).toFixed(0):'0'; };
+
+    return (
+        <div className="min-h-screen flex bg-[#fcfaff] relative overflow-hidden">
+            {openNote  && <NoteModal note={openNote} onClose={()=>setOpenNote(null)} onSave={updateNote} onDelete={id=>{delItem(id,'note');setOpenNote(null);}}/>}
+            {openTask  && <TaskModal task={openTask} onClose={()=>setOpenTask(null)} onDelete={id=>{delItem(id,'task');setOpenTask(null);}}/>}
+            {showModal==='settings' && <SettingsModal profile={profile} onClose={()=>setShowModal(null)} onSave={saveSettings}/>}
+
+            {sidebarOpen && <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[45] animate-fade" onClick={()=>setSidebarOpen(false)}/>}
+
+            {/* Sidebar */}
+            <aside className={`w-72 bg-[#0f172a] flex flex-col fixed h-full z-50 sidebar-transition ${sidebarOpen?'translate-x-0':'-translate-x-full'} shadow-2xl`}>
+                <div className="p-8 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white"><Icon name="graduation-cap" size={19}/></div>
+                        <span className="text-white font-black italic uppercase tracking-tighter text-xl">FlowGrade</span>
+                    </div>
+                    <button onClick={()=>setSidebarOpen(false)} className="p-2 text-slate-400 hover:text-white transition-colors"><Icon name="x" size={20}/></button>
+                </div>
+                <nav className="flex-1 space-y-1 mt-4 px-4">
+                    {[{id:'dashboard',icon:'layout-grid',label:'Overview'},{id:'tasks',icon:'calendar',label:'Study Planner'},{id:'grades',icon:'award',label:'Grade Tracker'},{id:'notes',icon:'book-open',label:'Note Vault'}].map(item=>(
+                        <button key={item.id} onClick={()=>{ setActiveTab(item.id); setSidebarOpen(false); if(item.id!=='grades')setOpenModule(null); }}
+                            className={`w-full flex items-center gap-4 px-6 py-4 rounded-xl text-sm font-bold transition-all ${activeTab===item.id?'sidebar-item-active':'text-slate-400 hover:text-white hover:bg-white/5'}`}>
+                            <Icon name={item.icon} size={20}/>{item.label}
+                        </button>
+                    ))}
+                </nav>
+                <div className="p-6 border-t border-white/10 space-y-3">
+                    <button onClick={()=>{ setShowModal('settings'); setSidebarOpen(false); }} className="w-full flex items-center gap-3 px-6 py-3 rounded-2xl text-slate-300 font-bold text-sm hover:bg-white/5 transition-all border border-white/10"><Icon name="settings" size={18}/> Settings</button>
+                    <button onClick={onSignOut} className="w-full flex items-center gap-3 px-6 py-3 bg-white rounded-2xl text-rose-500 font-bold text-sm hover:bg-slate-100 transition-all shadow-lg"><Icon name="log-out" size={18}/> Sign Out</button>
+                    <div className="relative">
+                        <button onClick={()=>setProfileMenu(!profileMenu)} className="w-full flex items-center justify-between p-3 bg-white/5 rounded-2xl border border-white/10 hover:border-indigo-500 transition-all">
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center text-[10px] font-bold">{profile.name.substring(0,2).toUpperCase()}</div>
+                                <div className="text-left">
+                                    <p className="text-[11px] font-bold text-white leading-none truncate w-32">{profile.name}</p>
+                                    {profile.institution&&<p className="text-[9px] text-slate-500 mt-0.5 truncate w-32">{profile.institution}</p>}
+                                </div>
+                            </div>
+                            <Icon name={profileMenu?'chevron-down':'chevron-right'} size={14} className="text-slate-500"/>
+                        </button>
+                        {profileMenu && (
+                            <div className="absolute bottom-full left-0 w-full mb-2 bg-[#1e293b] border border-white/10 rounded-xl overflow-hidden shadow-2xl animate-fade px-4 py-3">
+                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest truncate">{profile.email}</p>
+                                {profile.uniEmail&&<p className="text-[9px] text-indigo-400 mt-1 truncate">{profile.uniEmail}</p>}
+                                {profile.institution&&<p className="text-[9px] text-slate-500 mt-0.5">{profile.institution}</p>}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </aside>
+
+            {/* Main */}
+            <main className="flex-1 p-6 md:p-12">
+
+                {/* DASHBOARD */}
+                {activeTab==='dashboard' && (
+                    <div className="animate-fade space-y-8">
+                        <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                            <div className="flex items-center gap-4">
+                                <button onClick={()=>setSidebarOpen(true)} className="p-3.5 bg-white rounded-2xl shadow-sm border border-slate-100 text-indigo-600 hover:shadow-lg hover:border-indigo-200 transition-all active:scale-90"><Icon name="menu" size={24}/></button>
+                                <div>
+                                    <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">Welcome back, {profile.name.split(' ')[0]}</h1>
+                                    <p className="text-slate-500 text-sm mt-1">You have {tasks.length} pending task{tasks.length!==1?'s':''}.</p>
+                                </div>
+                            </div>
+                            <button onClick={()=>setShowModal('task')} className="bg-indigo-600 text-white px-6 py-4 rounded-2xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-indigo-700 shadow-xl shadow-indigo-100 transition-all w-full md:w-auto"><Icon name="plus" size={16}/> New Task</button>
+                        </header>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            {/* GPA */}
+                            <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm">
+                                <div className="flex items-center gap-3 mb-8"><div className="w-8 h-8 bg-green-50 text-green-500 rounded-lg flex items-center justify-center"><Icon name="trending-up" size={16}/></div><span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">CURRENT GPA</span></div>
+                                <div className="flex items-baseline gap-4 mb-6"><span className="text-5xl font-black text-slate-900">{gpa()}%</span><span className="text-xs font-bold text-green-500">Target: 70%+</span></div>
+                                <div className="progress-track"><div className="progress-fill" style={{width:`${Math.min(parseFloat(gpa()),100)}%`}}/></div>
+                            </div>
+                            {/* Upcoming — clickable */}
+                            <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm">
+                                <div className="flex items-center gap-3 mb-8"><div className="w-8 h-8 bg-indigo-50 text-indigo-500 rounded-lg flex items-center justify-center"><Icon name="calendar" size={16}/></div><span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">UPCOMING</span></div>
+                                {tasks.length>0 ? (
+                                    <div className="space-y-3">
+                                        {tasks.slice(0,3).map(t=>(
+                                            <button key={t.id} onClick={()=>setOpenTask(t)} className="w-full flex items-center justify-between p-4 bg-indigo-50/30 rounded-2xl border border-indigo-100 hover:border-indigo-400 hover:bg-white hover:shadow-sm transition-all group text-left">
+                                                <span className="text-sm font-bold text-slate-800 truncate mr-3">{t.title}</span>
+                                                <div className="flex items-center gap-2 shrink-0">
+                                                    <span className="text-[10px] font-bold text-indigo-600">{t.deadline||''}</span>
+                                                    <Icon name="chevron-right" size={12} className="text-indigo-300 group-hover:translate-x-0.5 transition-transform"/>
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                ) : <div className="text-center py-6 text-slate-300 italic text-sm">No scheduled tasks</div>}
+                            </div>
+                            {/* Focus card */}
+                            <div className="focus-card p-10 flex flex-col justify-center min-h-[220px]">
+                                <div className="relative z-10 max-w-[300px]">
+                                    <h3 className="text-2xl font-bold mb-4 leading-tight">Focus Protocol: Manual Tracking</h3>
+                                    <p className="text-indigo-100 text-sm leading-relaxed">Deeper cognitive recall happens when you manually interact with your progress. Avoid AI automation for study management.</p>
+                                </div>
+                                <div className="brain-overlay"><Icon name="brain" size={140}/></div>
+                            </div>
+                            {/* Latest notes */}
+                            <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm">
+                                <div className="flex items-center justify-between mb-8"><h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Latest Research Notes</h3><button onClick={()=>setActiveTab('notes')} className="text-[9px] font-black text-indigo-600 uppercase tracking-widest hover:underline">View All</button></div>
+                                {notes.length>0 ? (
+                                    <div className="space-y-3">{notes.slice(0,3).map(n=>(
+                                        <button key={n.id} onClick={()=>setOpenNote(n)} className="w-full flex items-center gap-4 p-4 bg-indigo-50/20 rounded-[1.5rem] border border-indigo-50 hover:bg-white hover:border-indigo-400 transition-all group text-left">
+                                            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-indigo-300 group-hover:text-indigo-600 shadow-sm border border-indigo-50 shrink-0"><Icon name="file-text" size={20}/></div>
+                                            <div className="flex-1 min-w-0"><p className="text-xs font-bold text-slate-800 truncate">{n.title}</p>{n.content&&<p className="text-[9px] text-slate-400 mt-0.5 truncate">{n.content.substring(0,60)}</p>}</div>
+                                            <Icon name="chevron-right" size={14} className="text-indigo-300 group-hover:translate-x-1 transition-transform shrink-0"/>
+                                        </button>
+                                    ))}</div>
+                                ) : <div className="text-center py-8 text-slate-300 italic text-sm border-2 border-dashed border-slate-100 rounded-[2rem]">Archive is empty</div>}
+                            </div>
+                            {/* Module breakdown */}
+                            <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm md:col-span-2">
+                                <div className="flex items-center justify-between mb-8"><h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Module Breakdown</h3><button onClick={()=>setActiveTab('grades')} className="text-[9px] font-black text-indigo-600 uppercase tracking-widest hover:underline">VIEW TRACKER</button></div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {Object.entries(moduleData).length>0 ? Object.entries(moduleData).map(([m,d])=>(
+                                        <button key={m} onClick={()=>{ setOpenModule(m); setActiveTab('grades'); }} className="p-5 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between hover:border-indigo-400 hover:bg-white hover:shadow-md transition-all group text-left w-full">
+                                            <div className="min-w-0"><p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Module</p><p className="text-sm font-bold text-slate-800 truncate">{m}</p></div>
+                                            <div className="flex items-center gap-2 shrink-0"><p className="text-xl font-black text-indigo-600">{(d.weightedSum/(d.totalWeight||1)).toFixed(0)}%</p><Icon name="chevron-right" size={14} className="text-indigo-300 group-hover:translate-x-1 transition-transform"/></div>
+                                        </button>
+                                    )) : <div className="col-span-full py-10 text-center"><p className="text-slate-300 italic text-sm">No module results recorded yet.</p></div>}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* GRADES */}
+                {activeTab==='grades' && (
+                    <div className="animate-fade">
+                        <div className="flex flex-col md:flex-row md:items-center gap-4 mb-10">
+                            <div className="flex items-center gap-4">
+                                <button onClick={()=>setSidebarOpen(true)} className="p-3.5 bg-white rounded-2xl shadow-sm border border-slate-100 text-indigo-600"><Icon name="menu" size={24}/></button>
+                                <h2 className="text-2xl font-black uppercase tracking-tight italic text-indigo-900">Grade Tracker</h2>
+                            </div>
+                            <div className="md:ml-auto flex items-center gap-3">
+                                {openModule&&<button onClick={()=>setOpenModule(null)} className="flex items-center gap-2 px-4 py-2.5 bg-indigo-50 border border-indigo-200 text-indigo-600 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-indigo-100 transition-all"><Icon name="x" size={12}/> Clear: {openModule}</button>}
+                                <button onClick={()=>setShowModal('grade')} className="bg-indigo-600 text-white px-6 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest">New Result</button>
+                            </div>
+                        </div>
+                        <div className="space-y-12">
+                            {Object.entries(moduleData).filter(([m])=>!openModule||m===openModule).map(([m,d])=>(
+                                <div key={m} className="space-y-6">
+                                    <div className={`flex items-end justify-between px-4 border-b pb-4 ${openModule===m?'border-indigo-300 bg-indigo-50/50 rounded-t-2xl pt-4':'border-indigo-50'}`}>
+                                        <div><h3 className="text-xl font-black text-slate-800">{m}</h3><p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Module Progression</p></div>
+                                        <div className="text-right"><p className="text-3xl font-black text-indigo-600">{(d.weightedSum/(d.totalWeight||1)).toFixed(1)}%</p><p className="text-[9px] font-bold text-slate-400 uppercase">Module Average</p></div>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        {d.items.map(item=>(
+                                            <div key={item.id} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm group hover:border-indigo-400 transition-all hover:shadow-md">
+                                                <div className="flex justify-between items-start mb-4"><h4 className="font-bold text-slate-800 text-lg leading-tight">{item.title}</h4><button onClick={()=>delItem(item.id,'grade')} className="text-slate-200 hover:text-rose-500 transition-colors p-1"><Icon name="trash-2" size={14}/></button></div>
+                                                <div className="flex justify-between items-center mt-4"><span className="text-3xl font-black text-slate-900">{item.value}%</span><span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-3 py-1 rounded-full border border-slate-100">Weight: {item.weight}%</span></div>
+                                                <div className="mt-4 pt-4 border-t border-slate-50 flex items-center gap-2"><Icon name="shield-check" size={12} className="text-indigo-400"/><span className="text-[9px] font-bold text-indigo-300 uppercase tracking-widest">SRL VERIFIED</span></div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                            {grades.length===0&&<button onClick={()=>setShowModal('grade')} className="w-full border-2 border-dashed border-indigo-100 rounded-[2.5rem] flex flex-col items-center justify-center p-20 text-indigo-200 hover:text-indigo-600 hover:bg-white transition-all gap-4"><Icon name="plus-circle" size={44}/><span className="text-[10px] font-bold uppercase tracking-widest">Add your first result</span></button>}
+                        </div>
+                    </div>
+                )}
+
+                {/* TASKS & NOTES */}
+                {(activeTab==='tasks'||activeTab==='notes') && (
+                    <div className="animate-fade">
+                        <div className="flex flex-col md:flex-row md:items-center gap-4 mb-10">
+                            <div className="flex items-center gap-4">
+                                <button onClick={()=>setSidebarOpen(true)} className="p-3.5 bg-white rounded-2xl shadow-sm border border-slate-100 text-indigo-600 hover:shadow-lg hover:border-indigo-200 transition-all active:scale-90"><Icon name="menu" size={24}/></button>
+                                <div>
+                                    <h2 className="text-2xl font-black uppercase tracking-tight italic text-indigo-900">{activeTab==='notes'?'Note Vault':'Study Planner'}</h2>
+                                    <p className="text-xs text-slate-400 mt-1">{activeTab==='notes'?'Knowledge base for research and lectures.':'Manage your academic commitments.'}</p>
+                                </div>
+                            </div>
+                            <div className="md:ml-auto"><button onClick={()=>setShowModal(activeTab==='notes'?'note':'task')} className="bg-indigo-600 text-white px-6 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest w-full md:w-auto">{activeTab==='notes'?'+ Add Note':'+ Add Task'}</button></div>
+                        </div>
+                        {activeTab==='notes' ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {notes.map(item=>(
+                                    <button key={item.id} onClick={()=>setOpenNote(item)} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm group hover:border-indigo-400 transition-all hover:shadow-md text-left w-full">
+                                        <div className="flex justify-between items-start mb-3">
+                                            <div className="w-9 h-9 bg-indigo-50 text-indigo-400 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-indigo-100 group-hover:text-indigo-600 transition-all"><Icon name="file-text" size={18}/></div>
+                                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"><span className="text-[9px] font-bold text-indigo-400 uppercase tracking-widest">Click to open</span><Icon name="arrow-up-right" size={10} className="text-indigo-400"/></div>
+                                        </div>
+                                        {item.module&&<p className="text-[9px] font-bold text-indigo-400 uppercase tracking-widest mb-1">{item.module}</p>}
+                                        <h4 className="font-bold text-slate-800 text-base leading-tight mb-2">{item.title}</h4>
+                                        {item.content&&<p className="text-xs text-slate-400 leading-relaxed line-clamp-3">{item.content}</p>}
+                                        <p className="text-[9px] text-slate-300 mt-3 font-medium">{item.createdAt?new Date(item.createdAt).toLocaleDateString('en-GB',{day:'numeric',month:'short'}):''}</p>
+                                    </button>
+                                ))}
+                                <button onClick={()=>setShowModal('note')} className="border-2 border-dashed border-indigo-100 rounded-[2.5rem] flex flex-col items-center justify-center p-12 text-indigo-200 hover:text-indigo-600 hover:bg-white hover:border-indigo-400 transition-all gap-4 group"><Icon name="plus-circle" size={44} className="group-hover:scale-110 transition-transform"/><span className="text-[10px] font-bold uppercase tracking-[0.2em]">Add New Note</span></button>
+                            </div>
+                        ) : (
+                            <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
+                                <div className="overflow-x-auto">
+                                    <table style={{width:'100%',borderCollapse:'collapse'}}>
+                                        <thead>
+                                            <tr style={{borderBottom:'1px solid #f1f5f9'}}>
+                                                <th style={{padding:'1rem 1.5rem',textAlign:'left',fontSize:'0.6rem',fontWeight:800,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'0.08em',width:'3rem'}}>Status</th>
+                                                <th style={{padding:'1rem 1.5rem',textAlign:'left',fontSize:'0.6rem',fontWeight:800,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'0.08em'}}>Assignment</th>
+                                                <th style={{padding:'1rem 1.5rem',textAlign:'left',fontSize:'0.6rem',fontWeight:800,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'0.08em'}}>Module</th>
+                                                <th style={{padding:'1rem 1.5rem',textAlign:'left',fontSize:'0.6rem',fontWeight:800,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'0.08em'}}>Deadline</th>
+                                                <th style={{padding:'1rem 1.5rem',textAlign:'left',fontSize:'0.6rem',fontWeight:800,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'0.08em'}}>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {tasks.map((item,idx)=>{
+                                                const daysLeft=item.deadline?Math.ceil((new Date(item.deadline)-new Date())/86400000):null;
+                                                const overdue=daysLeft!==null&&daysLeft<0;
+                                                const soon=daysLeft!==null&&daysLeft>=0&&daysLeft<=3;
+                                                return (
+                                                    <tr key={item.id} style={{borderBottom:idx<tasks.length-1?'1px solid #f8fafc':'none',transition:'background .15s'}} className="hover:bg-indigo-50/20">
+                                                        <td style={{padding:'1rem 1.5rem'}}>
+                                                            <input type="checkbox" style={{width:'1rem',height:'1rem',accentColor:'#6366f1',cursor:'pointer'}}/>
+                                                        </td>
+                                                        <td style={{padding:'1rem 1.5rem'}}>
+                                                            <span style={{fontWeight:700,color:'#0f172a',fontSize:'0.875rem'}}>{item.title}</span>
+                                                        </td>
+                                                        <td style={{padding:'1rem 1.5rem'}}>
+                                                            <span style={{fontSize:'0.75rem',fontWeight:600,color:'#64748b'}}>{item.module||'—'}</span>
+                                                        </td>
+                                                        <td style={{padding:'1rem 1.5rem'}}>
+                                                            <span style={{fontSize:'0.75rem',fontWeight:700,color:overdue?'#ef4444':soon?'#f59e0b':'#6366f1'}}>{item.deadline||'—'}</span>
+                                                        </td>
+                                                        <td style={{padding:'1rem 1.5rem'}}>
+                                                            <button onClick={()=>delItem(item.id,'task')} style={{padding:'0.4rem 0.75rem',borderRadius:'0.5rem',border:'1px solid #fee2e2',color:'#ef4444',fontSize:'0.65rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.05em',cursor:'pointer',background:'transparent',transition:'all .15s'}}
+                                                                onMouseOver={e=>e.currentTarget.style.background='#fee2e2'} onMouseOut={e=>e.currentTarget.style.background='transparent'}>Remove</button>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                            {tasks.length===0&&(
+                                                <tr><td colSpan={5} style={{padding:'3rem',textAlign:'center',color:'#cbd5e1',fontStyle:'italic',fontSize:'0.875rem'}}>No tasks yet — add your first assignment above</td></tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* ADD MODALS */}
+                {showModal&&showModal!=='settings'&&(
+                    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                        <div className="bg-white w-full max-w-lg rounded-[2.5rem] overflow-hidden animate-fade shadow-2xl">
+                            <div className="px-10 pt-10 pb-6 flex justify-between items-center">
+                                <h2 className="text-xl font-bold text-[#0f172a] tracking-tight">{showModal==='grade'?'Add New Result':showModal==='task'?'Add New Assignment':'Add New Note'}</h2>
+                                <button onClick={()=>setShowModal(null)} className="p-2 text-slate-400 hover:text-slate-600"><Icon name="x" size={20}/></button>
+                            </div>
+                            <div className="px-10 border-t border-slate-50 pt-6"/>
+                            <form onSubmit={e=>addItem(e,showModal)} className="px-10 pb-10 space-y-5">
+                                {showModal==='grade' ? (<>
+                                    <div><label className="fg-label">Module Name</label><input required name="module" className="fg-input" placeholder="Cyber Security"/></div>
+                                    <div><label className="fg-label">Assessment Name</label><input required name="title" className="fg-input" placeholder="Lab Exam"/></div>
+                                    <div className="grid grid-cols-2 gap-5">
+                                        <div><label className="fg-label">Weight (%)</label><input required type="number" min="0" max="100" name="weight" className="fg-input" placeholder="40"/></div>
+                                        <div><label className="fg-label">Score (%)</label><input required type="number" min="0" max="100" name="value" className="fg-input border-[#0f172a] border-2" placeholder="85"/></div>
+                                    </div>
+                                </>) : showModal==='task' ? (<>
+                                    <div><label className="fg-label">Task Title</label><input required name="title" className="fg-input" placeholder="IT Project"/></div>
+                                    <div><label className="fg-label">Module / Course</label><input required name="module" className="fg-input" placeholder="Computer Science"/></div>
+                                    <div><label className="fg-label">Due Date</label><input required type="date" name="deadline" className="fg-input"/></div>
+                                </>) : (<>
+                                    <div><label className="fg-label">Title</label><input required name="title" className="fg-input" placeholder="Enter note title..."/></div>
+                                    <div><label className="fg-label">Module</label><input name="module" className="fg-input" placeholder="e.g. 367163SH"/></div>
+                                    <div><label className="fg-label">Research Content</label><textarea name="content" className="fg-input min-h-[150px]" placeholder="Write your notes here..." style={{resize:'vertical'}}/></div>
+                                </>)}
+                                <div className="pt-2"><button type="submit" className="btn-dark">Confirm &amp; Save</button></div>
+                            </form>
+                        </div>
+                    </div>
+                )}
+            </main>
+        </div>
+    );
+}
+
+/* ════════════════════════════════════════════
+   ROOT
+════════════════════════════════════════════ */
+function Root() {
+    const [page,    setPage]    = useState('welcome'); // 'welcome' | 'login' | 'signup'
+    const [profile, setProfile] = useState(null);
+
+    if (profile) return <AppShell profile={profile} onSignOut={()=>{ setProfile(null); setPage('welcome'); }}/>;
+    if (page==='welcome') return <WelcomePage onSignUp={()=>setPage('signup')} onLogin={()=>setPage('login')}/>;
+    return <AuthPortal initialMode={page==='login'?'login':'signup'} onBack={()=>setPage('welcome')} onAuthenticated={setProfile}/>;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<Root/>);
+</script>
+</body>
+</html>
