@@ -19,17 +19,17 @@ const pool = new Pool({
 });
 
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  host: 'smtp.gmail.com',
+  host: "smtp.gmail.com",
   port: 465,
   secure: true, 
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
-  connectionTimeout: 10000, // Wait 10 seconds before giving up
-  greetingTimeout: 10000,
-  socketTimeout: 10000,
+  tls: {
+    rejectUnauthorized: false // This helps bypass Render's network blocks
+  },
+  connectionTimeout: 20000 
 });
 
 // Verify email configuration on startup
