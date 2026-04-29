@@ -27,9 +27,13 @@ const transporter = nodemailer.createTransport({
     pass: process.env.EMAIL_PASS,
   },
   tls: {
-    rejectUnauthorized: false // This helps bypass Render's network blocks
+    // This is the key: it prevents Render from rejecting 
+    // the connection during the security handshake
+    rejectUnauthorized: false 
   },
-  connectionTimeout: 20000 
+  connectionTimeout: 20000, // 20 seconds
+  greetingTimeout: 20000,
+  socketTimeout: 20000
 });
 
 // Verify email configuration on startup
