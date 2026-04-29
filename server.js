@@ -42,7 +42,7 @@ transporter.verify((error, success) => {
         console.error('   Error:', error.message);
         console.error('   Please set EMAIL_USER and EMAIL_PASS in Render');
     } else {
-        console.log('✅ Email Service: Ready');
+        console.log(' Email Service: Ready');
     }
 });
 
@@ -70,9 +70,9 @@ const initDb = async () => {
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             );
         `);
-        console.log('✅ Database Tables Ready');
+        console.log(' Database Tables Ready');
     } catch (err) {
-        console.error('❌ DB Init Error:', err.message);
+        console.error(' DB Init Error:', err.message);
     }
 };
 initDb();
@@ -185,7 +185,7 @@ app.post('/api/forgot-password', async (req, res) => {
         const mailOptions = {
             from: `"FlowGrade Support" <${process.env.EMAIL_USER}>`,
             to: em,
-            subject: '🔐 FlowGrade Password Reset Code',
+            subject: ' FlowGrade Password Reset Code',
             html: `
                 <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;">
                     <div style="text-align: center; margin-bottom: 30px;">
@@ -223,7 +223,7 @@ app.post('/api/forgot-password', async (req, res) => {
         });
         
     } catch (error) {
-        console.error('❌ Email Error Details:', error.message);
+        console.error(' Email Error Details:', error.message);
         console.error('   Full error:', error);
         res.status(500).json({ 
             error: "Failed to send reset email. Please try again later.",
@@ -285,7 +285,7 @@ app.post('/api/reset-password', async (req, res) => {
             [hashedPassword, email.toLowerCase().trim()]
         );
         
-        console.log(`✅ Password reset for ${email}`);
+        console.log(` Password reset for ${email}`);
         res.json({ success: true, message: "Password reset successful!" });
         
     } catch (error) {
@@ -340,35 +340,13 @@ app.get('/health', (req, res) => {
     });
 });
 
-app.get('/', (req, res) => res.send('✅ FlowGrade Backend Live'));
+app.get('/', (req, res) => res.send(' FlowGrade Backend Live'));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`========================================`);
-    console.log(`✅ Server running on port ${PORT}`);
-    console.log(`📧 Email: ${process.env.EMAIL_USER ? 'Configured ✓' : 'NOT Configured ✗'}`);
+    console.log(` Server running on port ${PORT}`);
+    console.log(` Email: ${process.env.EMAIL_USER ? 'Configured ✓' : 'NOT Configured ✗'}`);
     console.log(`========================================`);
 });
 
-//Frontend Reference List
-// Meta Platforms, Inc. (2026) React: The library for web and native user interfaces. Available at: https://react.dev/ (Accessed: 29 April 2026).
-// Meta Platforms, Inc. (2026) Conditional Rendering – React. Available at: https://react.dev/learn/conditional-rendering (Accessed: 29 April 2026).
-// Google Fonts (2026) Plus Jakarta Sans. Available at: https://fonts.google.com/specimen/Plus+Jakarta+Sans (Accessed: 29 April 2026).
-// Lucide Contributors (2026) Lucide: Beautiful & consistent icons. Available at: https://lucide.dev/ (Accessed: 29 April 2026).
-// Tailwind CSS (2026) Play CDN Installation. Available at: https://tailwindcss.com/docs/installation/play-cdn (Accessed: 29 April 2026).
-// MDN Web Docs (2026) Conditional (ternary) operator - JavaScript. Available at: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Conditional_operator (Accessed: 29 April 2026).
-// GeeksforGeeks (2026) How to Create GPA Calculator Card using JavaScript and Tailwind CSS. Available at: https://www.geeksforgeeks.org/javascript/how-to-create-gpa-calculator-card-using-javascript-and-tailwind-css/ (Accessed: 29 April 2026).
-// W3Schools (2026) JavaScript parseFloat() Method. Available at: https://www.w3schools.com/jsref/jsref_parsefloat.asp (Accessed: 29 April 2026).
-// W3Schools (2026) JavaScript Math.ceil() Method. Available at: https://www.w3schools.com/jsref/jsref_ceil.asp (Accessed: 29 April 2026).
-// W3Schools (2026) HTML5 Web Storage. Available at: https://www.w3schools.com/html/html5_webstorage.asp (Accessed: 29 April 2026).
-// W3Schools (2026) CSS3 Animations. Available at: https://www.w3schools.com/css/css3_animations.asp (Accessed: 29 April 2026).
-
-//Backend Reference List
-// Express.js (2026) Express API Reference. Available at: https://expressjs.com/en/4x/api.html (Accessed: 29 April 2026).
-// Node-Postgres (2026) Official node-postgres Documentation. Available at: https://node-postgres.com/ (Accessed: 29 April 2026).
-// Nodemailer (2026) Nodemailer Module Reference. Available at: https://nodemailer.com/ (Accessed: 29 April 2026).
-// MDN Web Docs (2026) HTTP Response Status Codes. Available at: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status (Accessed: 29 April 2026).
-// NPM (2026) Bcrypt: A library to help you hash passwords. Available at: https://www.npmjs.com/package/bcrypt (Accessed: 29 April 2026).
-// W3Schools (2026) SQL CREATE TABLE Statement. Available at: https://www.w3schools.com/sql/sql_create_table.asp (Accessed: 29 April 2026).
-// W3Schools (2026) JavaScript Fetch API. Available at: https://www.w3schools.com/js/js_api_fetch.asp (Accessed: 29 April 2026).
-// W3Schools (2026) Node.js process.env Guide. Available at: https://www.w3schools.com/nodejs/nodejs_url.asp (Accessed: 29 April 2026).
