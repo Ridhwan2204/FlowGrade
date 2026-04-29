@@ -18,16 +18,18 @@ const pool = new Pool({
     idleTimeoutMillis: 30000
 });
 
-// Email Transporter - Using environment variables
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   host: 'smtp.gmail.com',
-  port: 465,       // Changed from 587 to 465
-  secure: true,    // Changed from false to true
+  port: 465,
+  secure: true, 
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
+  connectionTimeout: 10000, // Wait 10 seconds before giving up
+  greetingTimeout: 10000,
+  socketTimeout: 10000,
 });
 
 // Verify email configuration on startup
