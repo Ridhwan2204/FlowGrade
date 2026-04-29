@@ -73,8 +73,8 @@
 <script type="text/babel">
 const { useState, useEffect, useMemo, useRef } = React;
 
-/* API Configuration (Updated for Render) */
-const API_BASE = "https://flowgrade-2.onrender.com/api";
+/* API Configuration - UPDATED to correct backend URL */
+const API_BASE = "https://flowgrade-backend.onrender.com/api";
 
 /* ── Storage ── */
 const SS = {
@@ -214,7 +214,7 @@ function WelcomePage({ onSignUp, onLogin }) {
 }
 
 /* ════════════════════════════════════════════
-   AUTH PORTAL (Updated: Direct Signup & Email Recovery)
+   AUTH PORTAL (FIXED: Email Recovery with correct /api/ endpoints)
 ════════════════════════════════════════════ */
 function AuthPortal({ initialMode, onBack, onAuthenticated }) {
     const [mode,    setMode]    = useState(initialMode); // login, signup, verify, forgot, reset
@@ -234,48 +234,66 @@ function AuthPortal({ initialMode, onBack, onAuthenticated }) {
     const str    = pws(pwd);
     const locked = lockUntil && Date.now() < lockUntil;
 
-    // Password Recovery: Send Real Email (Functional Requirement TC05)
+    // FIXED: Password Recovery - Send Reset Email (correct endpoint with /api/)
     const handleForgot = async e => {
         e.preventDefault();
         setError('');
+        if (!email) return setError('Please enter your email address');
+        
         try {
             const res = await fetch(`${API_BASE}/forgot-password`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email: email.toLowerCase().trim() })
             });
+            const data = await res.json();
+            
             if (res.ok) {
-                const data = await res.json();
                 setCode(data.code); 
                 setMode('verify');
+                setError('');
             } else {
-                const data = await res.json();
                 setError(data.error || "Account not found or email failed.");
             }
         } catch (err) {
-            setError("SQL Server is offline.");
+            console.error('Forgot password error:', err);
+            setError("Cannot connect to server. Please try again.");
         }
     };
 
-    // Password Reset: Update SQL Database
+    // FIXED: Password Reset - Update password in database (correct endpoint with /api/)
     const handleReset = async e => {
         e.preventDefault();
         if (str.score < 2) return setError('New password is too weak.');
         if (pwd !== confirm) return setError('Passwords do not match.');
         
+        if (!code) return setError('Missing verification code. Please restart the process.');
+        
         try {
             const res = await fetch(`${API_BASE}/reset-password`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: email.toLowerCase().trim(), password: pwd })
+                body: JSON.stringify({ 
+                    email: email.toLowerCase().trim(), 
+                    code: code,
+                    newPassword: pwd 
+                })
             });
+            const data = await res.json();
+            
             if (res.ok) {
-                alert('Password reset successful in database!');
+                alert('Password reset successful! Please login with your new password.');
                 setMode('login');
+                setPwd('');
+                setConfirm('');
+                setCode('');
             } else {
-                setError("Database update failed.");
+                setError(data.error || "Database update failed.");
             }
-        } catch(err) { setError("SQL sync offline"); }
+        } catch(err) { 
+            console.error('Reset error:', err);
+            setError("Cannot connect to server. Please try again."); 
+        }
     };
 
     const submit = async e => {
@@ -295,7 +313,7 @@ function AuthPortal({ initialMode, onBack, onAuthenticated }) {
             setAttempts(0); setLockUntil(null);
             onAuthenticated(u);
         } else {
-            // SIGN UP (Instant: No code verification)
+            // SIGN UP
             if (!name.trim()||name.trim().length<2) return setError('Enter your full name.');
             if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) return setError('Enter a valid email address.');
             if (str.score<2) return setError('Password too weak.');
@@ -313,7 +331,6 @@ function AuthPortal({ initialMode, onBack, onAuthenticated }) {
             };
 
             try {
-                // Sync to SQL
                 await fetch(`${API_BASE}/register`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -326,10 +343,11 @@ function AuthPortal({ initialMode, onBack, onAuthenticated }) {
         }
     };
 
-    const verify = e => {
-        e.preventDefault(); setCodeErr('');
-        if (codeIn.trim() !== code.toString()) return setCodeErr('Incorrect code.');
-        setMode('reset'); // Used only for recovery path
+    const verifyCode = e => {
+        e.preventDefault(); 
+        setCodeErr('');
+        if (codeIn.trim() !== code.toString()) return setCodeErr('Incorrect code. Please check your email and try again.');
+        setMode('reset');
     };
 
     const BackBtn=({onClick,label})=>(
@@ -341,10 +359,11 @@ function AuthPortal({ initialMode, onBack, onAuthenticated }) {
     if (mode==='reset') return (
         <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
             <div className="max-w-md w-full bg-white p-10 rounded-[2.5rem] shadow-xl animate-fade">
-                <h2 className="text-xl font-bold text-slate-800 mb-6">New Password</h2>
+                <BackBtn onClick={() => setMode('login')} label="Back to login"/>
+                <h2 className="text-xl font-bold text-slate-800 mb-6">Create New Password</h2>
                 <form onSubmit={handleReset} className="space-y-4">
-                    <div><label className="fg-label">Password</label><input required type="password" className="fg-input" onChange={e=>setPwd(e.target.value)}/></div>
-                    <div><label className="fg-label">Confirm</label><input required type="password" className="fg-input" onChange={e=>setConfirm(e.target.value)}/></div>
+                    <div><label className="fg-label">New Password</label><input required type="password" className="fg-input" onChange={e=>setPwd(e.target.value)}/></div>
+                    <div><label className="fg-label">Confirm Password</label><input required type="password" className="fg-input" onChange={e=>setConfirm(e.target.value)}/></div>
                     {error && <p className="text-xs text-red-500 font-bold">{error}</p>}
                     <button type="submit" className="btn-dark">Reset Password</button>
                 </form>
@@ -357,8 +376,9 @@ function AuthPortal({ initialMode, onBack, onAuthenticated }) {
             <div className="max-w-md w-full bg-white p-10 rounded-[2.5rem] shadow-xl animate-fade">
                 <BackBtn onClick={() => setMode('login')} label="Back to login"/>
                 <h2 className="text-xl font-bold text-slate-800 mb-6">Recover Account</h2>
+                <p className="text-xs text-slate-500 mb-4">Enter your email to receive a 6-digit reset code.</p>
                 <form onSubmit={handleForgot} className="space-y-4">
-                    <div><label className="fg-label">Email</label><input required type="email" className="fg-input" value={email} onChange={e=>setEmail(e.target.value)}/></div>
+                    <div><label className="fg-label">Email</label><input required type="email" className="fg-input" value={email} onChange={e=>setEmail(e.target.value)} placeholder="your@email.com"/></div>
                     {error && <p className="text-xs text-red-500 font-bold">{error}</p>}
                     <button type="submit" className="btn-dark">Send Reset Code</button>
                 </form>
@@ -369,13 +389,13 @@ function AuthPortal({ initialMode, onBack, onAuthenticated }) {
     if (mode==='verify') return (
         <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 text-center">
             <div className="max-w-md w-full bg-white p-10 rounded-[2.5rem] shadow-xl animate-fade">
+                <BackBtn onClick={() => setMode('forgot')} label="Back to email"/>
                 <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-5 mb-6">
-                    <p className="text-[9px] font-bold text-indigo-400 uppercase tracking-widest mb-2">Code</p>
-                    <p className="text-xs text-slate-500 mb-4 italic">Check your Gmail inbox</p>
-                    <p className="text-4xl font-black tracking-[0.3em] text-indigo-700 font-mono">••••••</p>
+                    <p className="text-[9px] font-bold text-indigo-400 uppercase tracking-widest mb-2">Verification Code</p>
+                    <p className="text-xs text-slate-500 mb-4">Enter the 6-digit code sent to <strong>{email}</strong></p>
                 </div>
-                <form onSubmit={verify} className="space-y-4">
-                    <input required className="fg-input text-center text-2xl font-black" placeholder="······" onChange={e=>setCodeIn(e.target.value)}/>
+                <form onSubmit={verifyCode} className="space-y-4">
+                    <input required className="fg-input text-center text-2xl font-black tracking-[0.3em]" placeholder="000000" onChange={e=>setCodeIn(e.target.value)}/>
                     {codeErr && <p className="text-xs text-red-500 font-bold">{codeErr}</p>}
                     <button type="submit" className="btn-dark">Verify Code</button>
                 </form>
@@ -402,7 +422,7 @@ function AuthPortal({ initialMode, onBack, onAuthenticated }) {
                         <input required type={showPwd ? 'text' : 'password'} className="fg-input" onChange={e=>setPwd(e.target.value)}/>
                         {mode==='login' && <button type="button" onClick={() => setMode('forgot')} className="text-[10px] text-indigo-500 font-bold mt-2">Forgot Password?</button>}
                     </div>
-                    {mode==='signup' && <div><label className="fg-label">Confirm</label><input required type="password" className="fg-input" onChange={e=>setConfirm(e.target.value)}/></div>}
+                    {mode==='signup' && <div><label className="fg-label">Confirm Password</label><input required type="password" className="fg-input" onChange={e=>setConfirm(e.target.value)}/></div>}
                     {error && <p className="text-xs text-red-500 font-bold">{error}</p>}
                     <button type="submit" disabled={locked} className="btn-dark mt-2">{mode==='login'?'Sign In': (mode==='signup' ? 'Create Account' : 'Continue')}</button>
                 </form>
@@ -531,7 +551,7 @@ function TaskModal({ task, onClose, onDelete }) {
 }
 
 /* ════════════════════════════════════════════
-   APP SHELL  (post-login)
+   APP SHELL (post-login)
 ════════════════════════════════════════════ */
 function AppShell({ profile: initialProfile, onSignOut }) {
     const [profile,     setProfile]     = useState(initialProfile);
@@ -781,7 +801,7 @@ function AppShell({ profile: initialProfile, onSignOut }) {
                                                 <th style={{padding:'1rem 1.5rem',textAlign:'left',fontSize:'0.6rem',fontWeight:800,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'0.08em'}}>Module</th>
                                                 <th style={{padding:'1rem 1.5rem',textAlign:'left',fontSize:'0.6rem',fontWeight:800,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'0.08em'}}>Deadline</th>
                                                 <th style={{padding:'1rem 1.5rem',textAlign:'left',fontSize:'0.6rem',fontWeight:800,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'0.08em'}}>Actions</th>
-                                            </tr>
+                                             </tr>
                                         </thead>
                                         <tbody>
                                             {tasks.map((item,idx)=>{
