@@ -20,13 +20,14 @@ const pool = new Pool({
 
 // Email Transporter - Using environment variables
 const transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST || 'smtp.gmail.com', // Uses Render's EMAIL_HOST
-    port: process.env.EMAIL_PORT || 587,             // Uses Render's EMAIL_PORT
-    secure: process.env.EMAIL_PORT == 465,           // true for 465, false for 587
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-    }
+  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 465,       // Changed from 587 to 465
+  secure: true,    // Changed from false to true
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
 });
 
 // Verify email configuration on startup
